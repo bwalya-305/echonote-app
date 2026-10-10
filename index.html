@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoNote - AI Speech to Notes</title>
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-main: #c9d1d9;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        header {
+            padding: 20px 50px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #0077ff);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        header h1 {
+            color: var(--white);
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h2 {
+            font-size: 48px;
+            color: var(--white);
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 20px;
+            margin-bottom: 40px;
+            color: #8b949e;
+        }
+
+        .cta-button {
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.3);
+        }
+
+        .interactive-demo {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 40px auto;
+            max-width: 600px;
+            text-align: left;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .record-btn {
+            background-color: #da3633;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .record-btn.recording {
+            background-color: #238636;
+            animation: pulse 1.5s infinite;
+        }
+
+        .recording-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(35, 134, 54, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(35, 134, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(35, 134, 54, 0); }
+        }
+
+        .transcription-box {
+            min-height: 150px;
+            font-family: monospace;
+            font-size: 16px;
+            color: var(--primary);
+            white-space: pre-wrap;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background-color: var(--primary);
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+            opacity: 0;
+        }
+
+        .cursor.active {
+            opacity: 1;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">🎙️</div>
+            <h1>EchoNote</h1>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h2>Your Voice. Organized.</h2>
+        <!-- App description directly from the image -->
+        <p>Convert speech to structured notes in real-time with AI-powered organization tailored for your meetings, sermons, and lectures.</p>
+        <button class="cta-button">Get Started for Free</button>
+
+        <div class="interactive-demo">
+            <div class="demo-header">
+                <h3>Live AI Transcription Demo</h3>
+                <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+                    <div class="recording-indicator"></div>
+                    <span id="btnText">Simulate Recording</span>
+                </button>
+            </div>
+            <div class="transcription-box" id="transcriptionBox">Click the button above to simulate real-time AI transcription...<span class="cursor" id="cursor"></span></div>
+        </div>
+    </section>
+
+    <script>
+        let isRecording = false;
+        let typeInterval;
+        const recordBtn = document.getElementById('recordBtn');
+        const btnText = document.getElementById('btnText');
+        const transcriptionBox = document.getElementById('transcriptionBox');
+        const cursor = document.getElementById('cursor');
+
+        // The mock structured text that the AI will "generate"
+        const mockTranscript = 
+`[Meeting: Product Strategy]
+[Date: Today]
+
+Key Takeaways:
+• Launch target pushed to Q3.
+• Marketing budget increased by 15%.
+
+Action Items:
+[ ] Sarah to finalize UI mockups by Friday.
+[ ] John to schedule a sync with the engineering team.
+
+Summary: 
+The team agreed to prioritize user experience and delay the launch to ensure a polished product.`;
+
+        function toggleRecording() {
+            if (isRecording) {
+                // Stop recording
+                isRecording = false;
+                recordBtn.classList.remove('recording');
+                btnText.innerText = 'Simulate Recording';
+                clearInterval(typeInterval);
+                cursor.classList.remove('active');
+            } else {
+                // Start recording
+                isRecording = true;
+                recordBtn.classList.add('recording');
+                btnText.innerText = 'Stop Recording';
+                transcriptionBox.innerHTML = '';
+                transcriptionBox.appendChild(cursor);
+                cursor.classList.add('active');
+                
+                let i = 0;
+                typeInterval = setInterval(() => {
+                    if (i < mockTranscript.length) {
+                        const char = document.createTextNode(mockTranscript.charAt(i));
+                        transcriptionBox.insertBefore(char, cursor);
+                        i++;
+                    } else {
+                        clearInterval(typeInterval);
+                        recordBtn.classList.remove('recording');
+                        btnText.innerText = 'Restart Demo';
+                        isRecording = false;
+                    }
+                }, 40); // Typing speed
+            }
+        }
+    </script>
+</body>
+</html>
